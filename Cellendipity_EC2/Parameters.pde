@@ -46,7 +46,7 @@ class Parameters {
     strainSize = int(random(3,25)); // Number of cells in a strain
     numStrains = int(random(1,5)); // Number of strains (a group of cells sharing the same DNA)
     stepSize = 0;
-    stepSizeN = 20;
+    stepSizeN = 50;
     trailMode = 3; // 1=none, 2 = blend, 3 = continuous
 
     bkgColor = color(random(360), random(255), random(255)); // Background colour
