@@ -11,7 +11,7 @@ postTweet();
 setInterval(postTweet, 1000*60*1);
 
 function postTweet() {
-  var cmd = 'cellendipity_EC2/cellendipity_EC2';
+  var cmd = 'cellendipity_EC2/Cellendipity_EC2';
   exec (cmd, processing);
 
   function processing() {
