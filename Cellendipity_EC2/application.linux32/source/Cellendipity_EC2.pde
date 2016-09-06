@@ -12,13 +12,14 @@ String screendumpPath = "output.png";
 
 void setup() {
   colorMode(HSB, 360, 255, 255, 255);
+  smooth();
   // fullScreen();
   size(1024, 1024); // debug
   ellipseMode(RADIUS);
   p = new Parameters();
   colony = new Colony();
   if (p.greyscaleON) {background(p.bkgColGrey); } else {background(p.bkgColor);}
-  //if (p.debug) {frameRate(15);}
+  if (p.debug) {frameRate(1);}
 }
 
 void draw() {
