@@ -1,28 +1,17 @@
 class Colony {
 
   // VARIABLES
-  ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>//
+  ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>// //<>// //<>//
   int colonyMaxSize = 100;
+  float x,y;
 
   // CONSTRUCTOR: Create a 'Colony' object, initially populated with 'num' cells
   Colony() {
+    cells = new ArrayList<Cell>();
 
-    // Create initial population of cells
-    cells = new ArrayList<Cell>();                              // Initialize the arraylist
     for (int i = 0; i < p.numStrains; i++) {
       DNA dna = new DNA();
-      println("centerSpawn:" + p.centerSpawn);
-      if (p.centerSpawn) {
-        println("TRUE");
-        PVector po = new PVector(width/2, height/2);
-        println(po);
-      }
-      else {
-        println("FALSE");
-        PVector po = new PVector(random(width), random(height));
-        println(po);
-      }
-      //PVector po = new PVector(width/2, height/2);
+      //po = new PVector(x,y);
       //PVector po = new PVector(random(width), random(height));
       for (int j = 0; j < p.strainSize; j++) {
         PVector v = PVector.random2D();   // Initial velocity vector is random
