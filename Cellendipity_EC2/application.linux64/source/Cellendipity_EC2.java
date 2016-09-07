@@ -39,11 +39,9 @@ public void setup() {
 }
 
 public void draw() {
-  if (p.trailMode == 1 || p.debug) {background(p.bkgColor);}
-  if (p.trailMode == 2) {trails();}
+  if (p.debug) {background(p.bkgColor);}
   colony.run();
   manageColony();
-  //if (colony.cells.size() == 0) { if ((keyPressed == true) || p.autoRestart) {populateColony(); } } // Repopulate the colony when all the cells have died
 }
 
 public void populateColony() {
@@ -52,52 +50,13 @@ public void populateColony() {
   colony = new Colony();
 }
 
-public void trails() {
-  blendMode(SUBTRACT);
-  noStroke();
-  fill(1);
-  rect(0,0,width,height);
-  blendMode(BLEND);
-  fill(255);
-}
-
 public void manageColony() {
-  if (colony.cells.size() == 0 || frameCount > 3600) { //  If an extinction has occurred...
-    if (p.screendumpON) {screendump();} //WARNING! ALWAYS repopulate & restart the colony after doing this once!
+  if (colony.cells.size() == 0 || frameCount > 3600) { 
+    saveFrame(screendumpPath);
     exit();
-    populateColony(); // .... repopulate the colony
   }
 }
 
-// We can add a creature manually if we so desire
-public void mousePressed() {
-  PVector mousePos = new PVector (mouseX, mouseY);
-  PVector vel = PVector.random2D();
-  DNA dna = new DNA();
-  colony.spawn(mousePos, vel, dna);
-}
-
-public void mouseDragged() {
-  PVector mousePos = new PVector (mouseX, mouseY);
-  PVector vel = PVector.random2D();
-  DNA dna = new DNA();
-  colony.spawn(mousePos, vel, dna);
-}
-
-public void screendump() {
-  saveFrame(screendumpPath);
-}
-
-public void keyReleased() {
-  if (key == '1') {println("1"); p.trailMode = 1;}
-  if (key == '2') {println("2"); p.trailMode = 2;}
-  if (key == '3') {println("3"); p.trailMode = 3;}
-  if (key == 'r') {println("r"); colony.cells.clear();}
-  if (key == 'b') {println("b"); background(p.bkgColGrey); }
-  if (key == 'd') {println("d"); p.debug = !p.debug; }
-  if (key == 'n') {println("n"); p.nucleus = !p.nucleus; }
-  if (key == 's') {println("s"); screendump();}
-}
 class Cell {
 
   //  Objects
@@ -247,7 +206,7 @@ class Cell {
     velocityNoise = new PVector(vx,vy);
     xoff += step;
     yoff += step;
-    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>// //<>//
+    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>//
     float screwAngle = map(maturity, 0, 1, 0, spiral * TWO_PI);
     //if (dna.genes[11] >= 0.5) {screwAngle *= -1;} //IS THIS ACTUALLY NEEDED ANY MORE? (screwAngle is both +ve & -ve)
     velocity.rotate(screwAngle);
@@ -374,12 +333,15 @@ class Cell {
     childDNA.genes[4] = hue(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[5] = saturation(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[6] = brightness(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
+    
+    childDNA.genes[8] = r; // Child starts at size of mother's current radius
 
     //childDNA.mutate(0.01); // Child DNA can mutate. HACKED! Mutation is temporarily disabled!
 
     // Call spawn method (in Colony) with the new parameters for position, velocity, colour & starting radius)
     // Note: Currently no combining of parent DNA
-    colony.spawn(spawnPos, spawnVel, childDNA);
+    //colony.spawn(spawnPos, spawnVel, childDNA);
+    colony.spawn(position, spawnVel, childDNA); // Spawnpos = Mums position
 
 
     //Reduce fertility for parent cells by squaring them
@@ -415,7 +377,7 @@ class Cell {
 class Colony {
 
   // VARIABLES
-  ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>// //<>// //<>//
+  ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>// //<>//
   int colonyMaxSize = 100;
   float x,y;
 
@@ -429,15 +391,16 @@ class Colony {
       //PVector po = new PVector(random(width), random(height));
       for (int j = 0; j < p.strainSize; j++) {
         PVector v = PVector.random2D();   // Initial velocity vector is random
-        PVector po = new PVector(random(width), random(height));
+        //PVector po = new PVector(random(width), random(height));
+        PVector po = new PVector(width/2, height/2);
         cells.add(new Cell(po, v, dna)); // Add new Cell with DNA
       }
     }
   }
 
-// Spawn a new cell (called by e.g. MousePressed in main, accepting mouse coords for start position)
-  public void spawn(PVector mousePos, PVector vel, DNA dna_) {
-    cells.add(new Cell(mousePos, vel, dna_));
+// Spawn a new cell 
+  public void spawn(PVector pos, PVector vel, DNA dna_) {
+    cells.add(new Cell(pos, vel, dna_));
   }
 
 // Run the colony
@@ -508,26 +471,6 @@ class DNA {
       // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
       // 17 = noisePercent (0-100%)
 
-// FIXED VALUES
-      // genes[0] = 0;    // 0 = fill Hue (0-360)
-      // genes[1] = 0;    // 1 = fill Saturation (0-255)
-      // genes[2] = 0;    // 2 = fill Brightness (0-255)
-      // genes[3] = 100;  // 3 = fill Alpha (0-255)
-      // genes[4] = 120;  // 4 = stroke Hue (0-360)
-      // genes[5] = 255;  // 5 = stroke Saturation (0-255)
-      // genes[6] = 255;  // 6 = stroke Brightness (0-255)
-      genes[7] = 18;   // 7 = stroke Alpha (0-255)
-      // genes[8] = 25;   // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
-      // genes[9] = 10;   // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
-      // genes[10] = 500; // 10 = lifespan (200-1000)
-      genes[11] = 100; // 11 = flatness (50-200 %)
-      // genes[12] = -30; // 12 = spiral screw (-75 - +75 %)
-      genes[13] = 75;  // 13 = fertility (70-90%)
-      genes[14] = 1;   // 14 = spawnCount (1-5)
-      // genes[15] = 4;   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
-      // genes[16] = 5;   // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
-      // genes[17] = 50;  // 17 = noisePercent (0-100%)
-
       // RANDOMIZED VALUES
             genes[0] = random(360);        // 0 = fill Hue (0-360)
             genes[1] = random(255);        // 1 = fill Saturation (0-255)
@@ -536,17 +479,38 @@ class DNA {
             genes[4] = random(360);        // 4 = stroke Hue (0-360)
             genes[5] = random(255);        // 5 = stroke Saturation (0-255)
             genes[6] = random(255);        // 6 = stroke Brightness (0-255)
-            //genes[7] = random(255);        // 7 = stroke Alpha (0-255)
-            genes[8] = random(10, 100);    // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
+            genes[7] = random(255);        // 7 = stroke Alpha (0-255)
+            genes[8] = random(10, 75);    // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
             genes[9] = random(5, 20);      // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
             genes[10] = random(200, 1000); // 10 = lifespan (200-1000)
-            //genes[11] = random(50, 200);   // 11 = flatness (50-200 %)
+            genes[11] = random(75, 150);   // 11 = flatness (50-200 %)
             genes[12] = random(-75, 75);   // 12 = spiral screw (-75 - +75 %)
-            //genes[13] = random(70, 90);    // 13 = fertility (70-90%)
-            //genes[14] = random(1, 5);      // 14 = spawnCount (1-5)
+            genes[13] = random(70, 85);    // 13 = fertility (70-90%)
+            genes[14] = random(1, 5);      // 14 = spawnCount (1-5)
             genes[15] = random(0, 4);      // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
             genes[16] = random(1, 6);      // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
             genes[17] = random(100);       // 17 = noisePercent (0-100%)
+            
+            // FIXED VALUES (OVERRIDES)
+      // genes[0] = 0;    // 0 = fill Hue (0-360)
+      // genes[1] = 0;    // 1 = fill Saturation (0-255)
+      if (random(1)>0.5f) {genes[2] = 0;} else {genes[2] = 255;}    // 2 = fill Brightness (0-255)
+      if (random(1)>0.3f) {genes[3] = 7;} else {genes[3] = random(255);}  // 3 = fill Alpha (0-255)
+      // genes[4] = 120;  // 4 = stroke Hue (0-360)
+      // genes[5] = 255;  // 5 = stroke Saturation (0-255)
+      // genes[6] = 255;  // 6 = stroke Brightness (0-255)
+      if (random(1)>0.3f) {genes[7] = 40;} else {genes[7] = random(255);}  // 7 = stroke Alpha (0-255)
+      // genes[8] = 25;   // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
+      // genes[9] = 10;   // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
+      // genes[10] = 500; // 10 = lifespan (200-1000)
+      if (random(1)>0.4f) {genes[11] = 100;} else {genes[1] = random(75, 150);} // 11 = flatness (50-200 %)
+      if (random(1)>0.5f) {genes[12] = 0;} else {genes[12] = random(-75, 75);} // 12 = spiral screw (-75 - +75 %)
+      genes[13] = 75;  // 13 = fertility (70-90%)
+      genes[14] = 1;   // 14 = spawnCount (1-5)
+      // genes[15] = 4;   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
+      // genes[16] = 5;   // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
+      genes[17] = 30;  // 17 = noisePercent (0-100%)
+
 
     }
 
@@ -611,29 +575,39 @@ class Parameters {
     screendumpON = true;
     fillDisable = false;
     strokeDisable = false;
-    greyscaleON = false;
-    nucleus = false;
+    if (random(1) > 0.5f) {greyscaleON = true;} else {greyscaleON = false;}
+    if (random(1) > 0.6f) {nucleus = true;} else {nucleus = false;}
     stepped = true;
     wraparound = false;
 
     strainSize = PApplet.parseInt(random(3,20)); // Number of cells in a strain
-    numStrains = PApplet.parseInt(random(1,3)); // Number of strains (a group of cells sharing the same DNA)
-    stepSize = 0;
-    stepSizeN = 50;
-    trailMode = 3; // 1=none, 2 = blend, 3 = continuous
+    numStrains = PApplet.parseInt(random(1,4)); // Number of strains (a group of cells sharing the same DNA)
+    if (random(1) > 0.8f) {stepSize = PApplet.parseInt(random(20,50)); stepSizeN = stepSize;} else {stepSize = 0; stepSizeN = PApplet.parseInt(random(20, 50));}
+    //stepSizeN = int(random(20, 50));
+   
 
     bkgColor = color(random(360), random(255), random(255)); // Background colour
-    bkgColGrey = 128;
+    bkgColGrey = PApplet.parseInt(random(128));
 
-    fill_HTwist = 18;
-    fill_STwist = 0;
-    fill_BTwist = 18;
-    fill_ATwist = 0;
+    //fill_HTwist = 0; // (0-360)
+    //fill_STwist = 0; // (0-255)
+    //fill_BTwist = 0; // (0-255)
+    //fill_ATwist = 0; // (0-255)
 
-    stroke_HTwist = 0;
-    stroke_STwist = 0;
-    stroke_BTwist = 0;
-    stroke_ATwist = 0;
+    //stroke_HTwist = 0; // (0-360)
+    //stroke_STwist = 0; // (0-255)
+    //stroke_BTwist = 0; // (0-255)
+    //stroke_ATwist = 0; // (0-255)
+  
+    if (random(1) > 0.1f) {fill_HTwist = 0;} else {fill_HTwist = PApplet.parseInt(random(360));} // (0-255)
+    if (random(1) > 0.1f) {fill_STwist = 0;} else {fill_STwist = PApplet.parseInt(random(360));} // (0-255)
+    if (random(1) > 0.1f) {fill_BTwist = 0;} else {fill_BTwist = PApplet.parseInt(random(360));} // (0-255)
+    if (random(1) > 0.1f) {fill_ATwist = 0;} else {fill_ATwist = PApplet.parseInt(random(360));} // (0-255)
+
+    if (random(1) > 0.1f) {stroke_HTwist = 0;} else {stroke_HTwist = PApplet.parseInt(random(360));} // (0-255)
+    if (random(1) > 0.1f) {stroke_STwist = 0;} else {stroke_STwist = PApplet.parseInt(random(360));} // (0-255)
+    if (random(1) > 0.1f) {stroke_BTwist = 0;} else {stroke_BTwist = PApplet.parseInt(random(360));} // (0-255)
+    if (random(1) > 0.1f) {stroke_ATwist = 0;} else {stroke_ATwist = PApplet.parseInt(random(360));} // (0-255)
   }
 }
   public void settings() {  size(1024, 1024);  smooth(); }

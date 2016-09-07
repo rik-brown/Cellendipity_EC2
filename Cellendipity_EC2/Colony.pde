@@ -15,15 +15,16 @@ class Colony {
       //PVector po = new PVector(random(width), random(height));
       for (int j = 0; j < p.strainSize; j++) {
         PVector v = PVector.random2D();   // Initial velocity vector is random
-        PVector po = new PVector(random(width), random(height));
+        //PVector po = new PVector(random(width), random(height));
+        PVector po = new PVector(width/2, height/2);
         cells.add(new Cell(po, v, dna)); // Add new Cell with DNA
       }
     }
   }
 
-// Spawn a new cell (called by e.g. MousePressed in main, accepting mouse coords for start position)
-  void spawn(PVector mousePos, PVector vel, DNA dna_) {
-    cells.add(new Cell(mousePos, vel, dna_));
+// Spawn a new cell 
+  void spawn(PVector pos, PVector vel, DNA dna_) {
+    cells.add(new Cell(pos, vel, dna_));
   }
 
 // Run the colony

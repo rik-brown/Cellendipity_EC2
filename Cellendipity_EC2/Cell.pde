@@ -274,12 +274,15 @@ class Cell {
     childDNA.genes[4] = hue(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[5] = saturation(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[6] = brightness(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
+    
+    childDNA.genes[8] = r; // Child starts at size of mother's current radius
 
     //childDNA.mutate(0.01); // Child DNA can mutate. HACKED! Mutation is temporarily disabled!
 
     // Call spawn method (in Colony) with the new parameters for position, velocity, colour & starting radius)
     // Note: Currently no combining of parent DNA
-    colony.spawn(spawnPos, spawnVel, childDNA);
+    //colony.spawn(spawnPos, spawnVel, childDNA);
+    colony.spawn(position, spawnVel, childDNA); // Spawnpos = Mums position
 
 
     //Reduce fertility for parent cells by squaring them
