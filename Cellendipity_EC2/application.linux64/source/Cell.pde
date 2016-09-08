@@ -50,7 +50,7 @@ class Cell {
   float strokeAlpha;    // Transparency (HSB & RGB)
 
   // CONSTRUCTOR: create a 'cell' object
-  Cell (PVector pos, PVector vel, DNA dna_) {
+  Cell (PVector vel, DNA dna_) {
   // OBJECTS
   dna = dna_;
 
@@ -66,13 +66,15 @@ class Cell {
   // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
   // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
   // 10 = lifespan (200-1000)
-  // 11 = flatness (0.5 - 2) (or 50-200 %)
+  // 11 = flatness (50-200 %)
   // 12 = spiral screw (-75 to 75)
   // 13 = fertility (70-90%)
   // 14 = spawnCount (1-5)
   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
   // 16 = step (Noise) (0.005 - ?)  (cellendipity/one uses 0.001-0.006)
   // 17 = noisePercent (0-1) (0-100%)
+  // 18 = seedPosX (0-width)
+  // 19 = seedPosY (0-height)
 
   // BOOLEAN
   fertile = false; // A new cell always starts off infertile
@@ -88,14 +90,13 @@ class Cell {
   cellStartSize = dna.genes[8];
   cellEndSize = cellStartSize * dna.genes[9] * 0.01;
   r = cellStartSize; // Initial value for radius
-  flatness = dna.genes[11] * 0.01; // To make circles into ellipses. range 0.5 - 2.0
-
+  flatness = dna.genes[11] * 0.01; // To make circles into ellipses
   growth = (cellStartSize-cellEndSize)/lifespan; // Should work for both large>small and small>large
   drawStep = 1;
   drawStepN = 1;
 
   // MOVEMENT
-  position = pos.copy(); //cell has position
+  position = new PVector(dna.genes[18], dna.genes[19]); //cell has position
   velocityLinear = vel.copy(); //cell has unique basic velocity component
   noisePercent = dna.genes[17] * 0.01; // How much influence on velocity does Perlin noise have?
   spiral = dna.genes[12] * 0.01; // Spiral screw amount
@@ -107,13 +108,13 @@ class Cell {
   // COLOUR
 
   fill_H = dna.genes[0];
-  fill_S = dna.genes[1];
+  if (p.greyscaleON) {fill_S = 0;} else {fill_S = dna.genes[1];}
   fill_B = dna.genes[2];
   fillColor = color(fill_H, fill_S, fill_B); // Initial color is set
   fillAlpha = dna.genes[3];
 
   stroke_H = dna.genes[4];
-  stroke_S = dna.genes[5];
+  if (p.greyscaleON) {stroke_S = 0;} else {fill_S = dna.genes[1];}
   stroke_B = dna.genes[6];
   strokeColor = color(stroke_H, stroke_S, stroke_B); // Initial color is set
   strokeAlpha = dna.genes[7];
@@ -147,7 +148,7 @@ class Cell {
     velocityNoise = new PVector(vx,vy);
     xoff += step;
     yoff += step;
-    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>//
+    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>// //<>// //<>//
     float screwAngle = map(maturity, 0, 1, 0, spiral * TWO_PI);
     //if (dna.genes[11] >= 0.5) {screwAngle *= -1;} //IS THIS ACTUALLY NEEDED ANY MORE? (screwAngle is both +ve & -ve)
     velocity.rotate(screwAngle);
@@ -155,8 +156,9 @@ class Cell {
   }
 
   void updateSize() {
-    // r = ((sin(map(maturity, 1, 0, 0, PI)))+0)*cellStartSize;
-    r -= growth;
+    // I should introduce an selector-toggle here!
+    r = ((sin(map(maturity, 1, 0, 0, PI)))+0)*cellStartSize;
+    //r -= growth;
   }
 
   void updateFertility() {
@@ -203,7 +205,7 @@ class Cell {
     if (age >= lifespan) {return true;} // Death by old age (regardless of size, which may remain constant)
     if (position.x > width + r * flatness || position.x < -r * flatness || position.y > height + r * flatness || position.y < -r * flatness) {return true;} // Death if move beyond canvas boundary
     else { return false; }
-    //return false; // Use if no death
+    //return false; // Use to disable death
   }
 
   void display() {
@@ -246,12 +248,6 @@ class Cell {
     spawnCount --;
     other.spawnCount --;
 
-    // Calculate position for spawn based on PVector between cell & other (leaving 'distVect' unchanged, as it is needed later)
-    PVector spawnPos = distVect.copy();  // Create spawnPos as a copy of the (already available) distVect which points from parent cell to other
-    spawnPos.normalize();
-    spawnPos.mult(r);               // The spawn position is located at parent cell's radius
-    spawnPos.add(position);
-
     // Calculate velocity vector for spawn as being centered between parent cell & other
     PVector spawnVel = velocity.copy(); // Create spawnVel as a copy of parent cell's velocity vector
     spawnVel.add(other.velocity);       // Add dad's velocity
@@ -274,16 +270,13 @@ class Cell {
     childDNA.genes[4] = hue(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[5] = saturation(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[6] = brightness(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
-    
-    childDNA.genes[8] = r; // Child starts at size of mother's current radius
 
-    //childDNA.mutate(0.01); // Child DNA can mutate. HACKED! Mutation is temporarily disabled!
+    childDNA.genes[8] = (r + other.r) / 2; // Child cellStartSize is set at average of parents current radii
 
-    // Call spawn method (in Colony) with the new parameters for position, velocity, colour & starting radius)
-    // Note: Currently no combining of parent DNA
-    //colony.spawn(spawnPos, spawnVel, childDNA);
-    colony.spawn(position, spawnVel, childDNA); // Spawnpos = Mums position
+    childDNA.genes[18] = position.x; // Child starts at mother's current position
+    childDNA.genes[19] = position.y; // Child starts at mother's current position
 
+    colony.spawn(spawnVel, childDNA); // Spawnpos = Mums position
 
     //Reduce fertility for parent cells by squaring them
     fertility *= fertility;
@@ -293,25 +286,23 @@ class Cell {
   }
 
   void cellDebugger() { // For debug only
-  int rowHeight = 15;
-  fill(360, 255);
-  textSize(rowHeight);
-  text("r:" + r, position.x, position.y + rowHeight * 0);
-  text("cellStartSize:" + cellStartSize, position.x, position.y + rowHeight * 1);
-  text("cellEndSize:" + cellEndSize, position.x, position.y + rowHeight * 2);
-  //text("fill_HR:" + fill_HR, position.x, position.y + rowHeight * 0);
-  //text("rMax:" + rMax, position.x, position.y + rowHeight * 0);
-  text("growth:" + growth, position.x, position.y + rowHeight * 3);
-  //text("age:" + age, position.x, position.y + rowHeight * 0);
-  text("maturity:" + maturity, position.x, position.y + rowHeight * 4);
-  //text("fertile:" + fertile, position.x, position.y + rowHeight * 0);
-  //text("fertility:" + fertility, position.x, position.y + rowHeight * 1);
-  //text("spawnCount:" + spawnCount, position.x, position.y + rowHeight * 2);
-  //text("x-velocity:" + velocity.x, position.x, position.y + rowHeight * 0);
-  //text("y-velocity:" + velocity.y, position.x, position.y + rowHeight * 0);
-  //text("velocity heading:" + velocity.heading(), position.x, position.y + rowHeight * 0);
-     }
-
-
+    int rowHeight = 15;
+    fill(360, 255);
+    textSize(rowHeight);
+    text("r:" + r, position.x, position.y + rowHeight * 0);
+    text("cellStartSize:" + cellStartSize, position.x, position.y + rowHeight * 1);
+    text("cellEndSize:" + cellEndSize, position.x, position.y + rowHeight * 2);
+    //text("fill_HR:" + fill_HR, position.x, position.y + rowHeight * 0);
+    //text("rMax:" + rMax, position.x, position.y + rowHeight * 0);
+    text("growth:" + growth, position.x, position.y + rowHeight * 3);
+    //text("age:" + age, position.x, position.y + rowHeight * 0);
+    text("maturity:" + maturity, position.x, position.y + rowHeight * 4);
+    //text("fertile:" + fertile, position.x, position.y + rowHeight * 0);
+    //text("fertility:" + fertility, position.x, position.y + rowHeight * 1);
+    //text("spawnCount:" + spawnCount, position.x, position.y + rowHeight * 2);
+    //text("x-velocity:" + velocity.x, position.x, position.y + rowHeight * 0);
+    //text("y-velocity:" + velocity.y, position.x, position.y + rowHeight * 0);
+    //text("velocity heading:" + velocity.heading(), position.x, position.y + rowHeight * 0);
+  }
 
 }

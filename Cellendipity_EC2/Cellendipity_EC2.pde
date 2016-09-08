@@ -1,20 +1,19 @@
 /*
 * Cellendipity for Twitter Bot
-* Tuned for export & run in Linux environment
-* > No user interaction (mouse or GUI)
-* > Run once and output an image file
-* Randomise certain parameters each run
+* Simplified and tuned for export to run in Linux environment:
+*    > No user interaction (mouse or GUI)
+*    > Run once and output an image file with generic filename
+* Randomise certain parameters each run to explore the multi-dimensional design-space
 */
 
-Colony colony;      // A Colony object called 'colony'
-Parameters p;       // A Parameters object called 'p'
-String screendumpPath = "output.png";
+Colony colony;                               // A Colony object called 'colony'
+Parameters p;                                // A Parameters object called 'p'
+String screendumpPath = "output.png";        // Name & location of saved output
 
 void setup() {
   colorMode(HSB, 360, 255, 255, 255);
   smooth();
-  // fullScreen();
-  size(1024, 1024); // debug
+  size(1024, 1024);
   ellipseMode(RADIUS);
   p = new Parameters();
   colony = new Colony();
@@ -28,14 +27,8 @@ void draw() {
   manageColony();
 }
 
-void populateColony() {
-  if (p.greyscaleON) {background(p.bkgColGrey); } else {background(p.bkgColGrey);} // flush the background
-  colony.cells.clear();
-  colony = new Colony();
-}
-
 void manageColony() {
-  if (colony.cells.size() == 0 || frameCount > 3600) { 
+  if (colony.cells.size() == 0 || frameCount > 3600) {
     saveFrame(screendumpPath);
     exit();
   }

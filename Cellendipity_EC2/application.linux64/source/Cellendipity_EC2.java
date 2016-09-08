@@ -16,21 +16,20 @@ public class Cellendipity_EC2 extends PApplet {
 
 /*
 * Cellendipity for Twitter Bot
-* Tuned for export & run in Linux environment
-* > No user interaction (mouse or GUI)
-* > Run once and output an image file
-* Randomise certain parameters each run
+* Simplified and tuned for export to run in Linux environment:
+*    > No user interaction (mouse or GUI)
+*    > Run once and output an image file with generic filename
+* Randomise certain parameters each run to explore the multi-dimensional design-space
 */
 
-Colony colony;      // A Colony object called 'colony'
-Parameters p;       // A Parameters object called 'p'
-String screendumpPath = "output.png";
+Colony colony;                               // A Colony object called 'colony'
+Parameters p;                                // A Parameters object called 'p'
+String screendumpPath = "output.png";        // Name & location of saved output
 
 public void setup() {
   colorMode(HSB, 360, 255, 255, 255);
   
-  // fullScreen();
-   // debug
+  
   ellipseMode(RADIUS);
   p = new Parameters();
   colony = new Colony();
@@ -44,19 +43,12 @@ public void draw() {
   manageColony();
 }
 
-public void populateColony() {
-  if (p.greyscaleON) {background(p.bkgColGrey); } else {background(p.bkgColGrey);} // flush the background
-  colony.cells.clear();
-  colony = new Colony();
-}
-
 public void manageColony() {
-  if (colony.cells.size() == 0 || frameCount > 3600) { 
+  if (colony.cells.size() == 0 || frameCount > 3600) {
     saveFrame(screendumpPath);
     exit();
   }
 }
-
 class Cell {
 
   //  Objects
@@ -109,7 +101,7 @@ class Cell {
   float strokeAlpha;    // Transparency (HSB & RGB)
 
   // CONSTRUCTOR: create a 'cell' object
-  Cell (PVector pos, PVector vel, DNA dna_) {
+  Cell (PVector vel, DNA dna_) {
   // OBJECTS
   dna = dna_;
 
@@ -125,13 +117,15 @@ class Cell {
   // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
   // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
   // 10 = lifespan (200-1000)
-  // 11 = flatness (0.5 - 2) (or 50-200 %)
+  // 11 = flatness (50-200 %)
   // 12 = spiral screw (-75 to 75)
   // 13 = fertility (70-90%)
   // 14 = spawnCount (1-5)
   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
   // 16 = step (Noise) (0.005 - ?)  (cellendipity/one uses 0.001-0.006)
   // 17 = noisePercent (0-1) (0-100%)
+  // 18 = seedPosX (0-width)
+  // 19 = seedPosY (0-height)
 
   // BOOLEAN
   fertile = false; // A new cell always starts off infertile
@@ -147,14 +141,13 @@ class Cell {
   cellStartSize = dna.genes[8];
   cellEndSize = cellStartSize * dna.genes[9] * 0.01f;
   r = cellStartSize; // Initial value for radius
-  flatness = dna.genes[11] * 0.01f; // To make circles into ellipses. range 0.5 - 2.0
-
+  flatness = dna.genes[11] * 0.01f; // To make circles into ellipses
   growth = (cellStartSize-cellEndSize)/lifespan; // Should work for both large>small and small>large
   drawStep = 1;
   drawStepN = 1;
 
   // MOVEMENT
-  position = pos.copy(); //cell has position
+  position = new PVector(dna.genes[18], dna.genes[19]); //cell has position
   velocityLinear = vel.copy(); //cell has unique basic velocity component
   noisePercent = dna.genes[17] * 0.01f; // How much influence on velocity does Perlin noise have?
   spiral = dna.genes[12] * 0.01f; // Spiral screw amount
@@ -166,13 +159,13 @@ class Cell {
   // COLOUR
 
   fill_H = dna.genes[0];
-  fill_S = dna.genes[1];
+  if (p.greyscaleON) {fill_S = 0;} else {fill_S = dna.genes[1];}
   fill_B = dna.genes[2];
   fillColor = color(fill_H, fill_S, fill_B); // Initial color is set
   fillAlpha = dna.genes[3];
 
   stroke_H = dna.genes[4];
-  stroke_S = dna.genes[5];
+  if (p.greyscaleON) {stroke_S = 0;} else {fill_S = dna.genes[1];}
   stroke_B = dna.genes[6];
   strokeColor = color(stroke_H, stroke_S, stroke_B); // Initial color is set
   strokeAlpha = dna.genes[7];
@@ -206,7 +199,7 @@ class Cell {
     velocityNoise = new PVector(vx,vy);
     xoff += step;
     yoff += step;
-    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>//
+    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>// //<>// //<>//
     float screwAngle = map(maturity, 0, 1, 0, spiral * TWO_PI);
     //if (dna.genes[11] >= 0.5) {screwAngle *= -1;} //IS THIS ACTUALLY NEEDED ANY MORE? (screwAngle is both +ve & -ve)
     velocity.rotate(screwAngle);
@@ -214,8 +207,9 @@ class Cell {
   }
 
   public void updateSize() {
-    // r = ((sin(map(maturity, 1, 0, 0, PI)))+0)*cellStartSize;
-    r -= growth;
+    // I should introduce an selector-toggle here!
+    r = ((sin(map(maturity, 1, 0, 0, PI)))+0)*cellStartSize;
+    //r -= growth;
   }
 
   public void updateFertility() {
@@ -262,7 +256,7 @@ class Cell {
     if (age >= lifespan) {return true;} // Death by old age (regardless of size, which may remain constant)
     if (position.x > width + r * flatness || position.x < -r * flatness || position.y > height + r * flatness || position.y < -r * flatness) {return true;} // Death if move beyond canvas boundary
     else { return false; }
-    //return false; // Use if no death
+    //return false; // Use to disable death
   }
 
   public void display() {
@@ -305,12 +299,6 @@ class Cell {
     spawnCount --;
     other.spawnCount --;
 
-    // Calculate position for spawn based on PVector between cell & other (leaving 'distVect' unchanged, as it is needed later)
-    PVector spawnPos = distVect.copy();  // Create spawnPos as a copy of the (already available) distVect which points from parent cell to other
-    spawnPos.normalize();
-    spawnPos.mult(r);               // The spawn position is located at parent cell's radius
-    spawnPos.add(position);
-
     // Calculate velocity vector for spawn as being centered between parent cell & other
     PVector spawnVel = velocity.copy(); // Create spawnVel as a copy of parent cell's velocity vector
     spawnVel.add(other.velocity);       // Add dad's velocity
@@ -333,16 +321,13 @@ class Cell {
     childDNA.genes[4] = hue(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[5] = saturation(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[6] = brightness(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
-    
-    childDNA.genes[8] = r; // Child starts at size of mother's current radius
 
-    //childDNA.mutate(0.01); // Child DNA can mutate. HACKED! Mutation is temporarily disabled!
+    childDNA.genes[8] = (r + other.r) / 2; // Child cellStartSize is set at average of parents current radii
 
-    // Call spawn method (in Colony) with the new parameters for position, velocity, colour & starting radius)
-    // Note: Currently no combining of parent DNA
-    //colony.spawn(spawnPos, spawnVel, childDNA);
-    colony.spawn(position, spawnVel, childDNA); // Spawnpos = Mums position
+    childDNA.genes[18] = position.x; // Child starts at mother's current position
+    childDNA.genes[19] = position.y; // Child starts at mother's current position
 
+    colony.spawn(spawnVel, childDNA); // Spawnpos = Mums position
 
     //Reduce fertility for parent cells by squaring them
     fertility *= fertility;
@@ -352,81 +337,71 @@ class Cell {
   }
 
   public void cellDebugger() { // For debug only
-  int rowHeight = 15;
-  fill(360, 255);
-  textSize(rowHeight);
-  text("r:" + r, position.x, position.y + rowHeight * 0);
-  text("cellStartSize:" + cellStartSize, position.x, position.y + rowHeight * 1);
-  text("cellEndSize:" + cellEndSize, position.x, position.y + rowHeight * 2);
-  //text("fill_HR:" + fill_HR, position.x, position.y + rowHeight * 0);
-  //text("rMax:" + rMax, position.x, position.y + rowHeight * 0);
-  text("growth:" + growth, position.x, position.y + rowHeight * 3);
-  //text("age:" + age, position.x, position.y + rowHeight * 0);
-  text("maturity:" + maturity, position.x, position.y + rowHeight * 4);
-  //text("fertile:" + fertile, position.x, position.y + rowHeight * 0);
-  //text("fertility:" + fertility, position.x, position.y + rowHeight * 1);
-  //text("spawnCount:" + spawnCount, position.x, position.y + rowHeight * 2);
-  //text("x-velocity:" + velocity.x, position.x, position.y + rowHeight * 0);
-  //text("y-velocity:" + velocity.y, position.x, position.y + rowHeight * 0);
-  //text("velocity heading:" + velocity.heading(), position.x, position.y + rowHeight * 0);
-     }
-
-
+    int rowHeight = 15;
+    fill(360, 255);
+    textSize(rowHeight);
+    text("r:" + r, position.x, position.y + rowHeight * 0);
+    text("cellStartSize:" + cellStartSize, position.x, position.y + rowHeight * 1);
+    text("cellEndSize:" + cellEndSize, position.x, position.y + rowHeight * 2);
+    //text("fill_HR:" + fill_HR, position.x, position.y + rowHeight * 0);
+    //text("rMax:" + rMax, position.x, position.y + rowHeight * 0);
+    text("growth:" + growth, position.x, position.y + rowHeight * 3);
+    //text("age:" + age, position.x, position.y + rowHeight * 0);
+    text("maturity:" + maturity, position.x, position.y + rowHeight * 4);
+    //text("fertile:" + fertile, position.x, position.y + rowHeight * 0);
+    //text("fertility:" + fertility, position.x, position.y + rowHeight * 1);
+    //text("spawnCount:" + spawnCount, position.x, position.y + rowHeight * 2);
+    //text("x-velocity:" + velocity.x, position.x, position.y + rowHeight * 0);
+    //text("y-velocity:" + velocity.y, position.x, position.y + rowHeight * 0);
+    //text("velocity heading:" + velocity.heading(), position.x, position.y + rowHeight * 0);
+  }
 
 }
 class Colony {
 
+// position is no longer passed in to the constructor as a vector, but as values in the DNA
+// this is not ideal, but better than before (when it didn't work)
+
   // VARIABLES
-  ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>// //<>//
+  ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>// //<>// //<>//
   int colonyMaxSize = 100;
-  float x,y;
 
   // CONSTRUCTOR: Create a 'Colony' object, initially populated with 'num' cells
   Colony() {
     cells = new ArrayList<Cell>();
 
     for (int i = 0; i < p.numStrains; i++) {
-      DNA dna = new DNA();
-      //po = new PVector(x,y);
-      //PVector po = new PVector(random(width), random(height));
+      DNA dna = new DNA(); // All cells in a strain have identical DNA
       for (int j = 0; j < p.strainSize; j++) {
-        PVector v = PVector.random2D();   // Initial velocity vector is random
-        //PVector po = new PVector(random(width), random(height));
-        PVector po = new PVector(width/2, height/2);
-        cells.add(new Cell(po, v, dna)); // Add new Cell with DNA
+        PVector v = PVector.random2D();   // Initial velocity vector is random & unique for each cell
+        cells.add(new Cell(v, dna)); // Add new Cell with DNA
       }
     }
   }
 
-// Spawn a new cell 
-  public void spawn(PVector pos, PVector vel, DNA dna_) {
-    cells.add(new Cell(pos, vel, dna_));
+// Spawn a new cell
+  public void spawn(PVector vel, DNA dna_) {
+    cells.add(new Cell(vel, dna_));
   }
 
 // Run the colony
   public void run() {
-    if (p.debug) {colonyDebugger(); }
+    if (p.debug) {colonyDebugger();}
     for (int i = cells.size()-1; i >= 0; i--) {  // Iterate backwards through the ArrayList because we are removing items
       Cell c = cells.get(i);                     // Get one cell at a time
       c.run();                                   // Run the cell (grow, move, spawn, check position vs boundaries etc.)
       if (c.dead()) {cells.remove(i);}           // If the cell has died, remove it from the array
 
       // Iteration to check collision between current cell(i) and the rest
-      if (cells.size() <= colonyMaxSize && c.fertile) {             // Don't check for collisons if there are too many cells (wait until some die off)
+      if (cells.size() <= colonyMaxSize && c.fertile) {         // Don't check for collisons if there are too many cells (wait until some die off)
         for (int others = i-1; others >= 0; others--) {         // Since main iteration (i) goes backwards, this one needs to too
           Cell other = cells.get(others);                       // Get the other cells, one by one
           if (other.fertile) { c.checkCollision(other); }       // Only check for collisions when both cells are fertile
         }
       }
     }
-    // If there are too many cells, remove some by 'culling'
-   if (cells.size() > colonyMaxSize) { cull(colonyMaxSize); }
   }
 
-  public void cull(int div)  {  // To remove a proportion of the cells from (the oldest part of) the colony
-    int cull = (cells.size()/div);
-    for (int i = cull; i >= 0; i--) {cells.remove(i); }
-  }
 
   public void colonyDebugger() {  // Displays some values as text at the top left corner (for debug only)
     noStroke();
@@ -435,13 +410,15 @@ class Colony {
     fill(360);
     textSize(16);
     text("frames" + frameCount + " Nr. cells: " + cells.size() + " MaxLimit:" + colonyMaxSize, 10, 18);
-    text("TrailMode: " + p.trailMode + " Debug:" + p.debug, 10, 36);
   }
+
 }
 // Class to describe DNA
 // Borrowed from 'Evolution EcoSystem'
-// by Daniel Shiffman <http://www.shiffman.net>
+// by Daniel Shiffman <http://www.shiffman.net> #codingrainbow
 
+// Settings apply equally to all cells in a strain
+// Adding genes for position. All cells in a strain will share the same start position
 
 class DNA {
 
@@ -449,7 +426,7 @@ class DNA {
 
   // Constructor (makes a random DNA)
   DNA() {
-      genes = new float[18];  // DNA contains an array called 'genes' with [12] float values
+      genes = new float[20];  // DNA contains an array called 'genes' with [12] float values
 
       // DNA gene mapping (18 genes)
       // 0 = fill Hue (0-360)
@@ -470,6 +447,8 @@ class DNA {
       // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
       // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
       // 17 = noisePercent (0-100%)
+      // 18 = seedPosX (0-width)
+      // 19 = seedPosY (0-height)
 
       // RANDOMIZED VALUES
             genes[0] = random(360);        // 0 = fill Hue (0-360)
@@ -480,36 +459,42 @@ class DNA {
             genes[5] = random(255);        // 5 = stroke Saturation (0-255)
             genes[6] = random(255);        // 6 = stroke Brightness (0-255)
             genes[7] = random(255);        // 7 = stroke Alpha (0-255)
-            genes[8] = random(10, 75);    // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
+            genes[8] = random(50, 50);    // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
             genes[9] = random(5, 20);      // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
             genes[10] = random(200, 1000); // 10 = lifespan (200-1000)
             genes[11] = random(75, 150);   // 11 = flatness (50-200 %)
             genes[12] = random(-75, 75);   // 12 = spiral screw (-75 - +75 %)
             genes[13] = random(70, 85);    // 13 = fertility (70-90%)
             genes[14] = random(1, 5);      // 14 = spawnCount (1-5)
-            genes[15] = random(0, 4);      // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
+            genes[15] = random(0, 3);      // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
             genes[16] = random(1, 6);      // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
             genes[17] = random(100);       // 17 = noisePercent (0-100%)
-            
+            genes[18] = random(width);     // 18 = seedPosX (0-width)
+            genes[18] = random(height);    // 19 = seedPosY (0-height)
+
             // FIXED VALUES (OVERRIDES)
       // genes[0] = 0;    // 0 = fill Hue (0-360)
       // genes[1] = 0;    // 1 = fill Saturation (0-255)
       if (random(1)>0.5f) {genes[2] = 0;} else {genes[2] = 255;}    // 2 = fill Brightness (0-255)
-      if (random(1)>0.3f) {genes[3] = 7;} else {genes[3] = random(255);}  // 3 = fill Alpha (0-255)
+      //if (random(1)>0.3) {genes[3] = 7;} else {genes[3] = random(255);}  // 3 = fill Alpha (0-255)
+      genes[3] = 5;    // 3 = fill Alpha (0-255)
       // genes[4] = 120;  // 4 = stroke Hue (0-360)
       // genes[5] = 255;  // 5 = stroke Saturation (0-255)
       // genes[6] = 255;  // 6 = stroke Brightness (0-255)
-      if (random(1)>0.3f) {genes[7] = 40;} else {genes[7] = random(255);}  // 7 = stroke Alpha (0-255)
-      // genes[8] = 25;   // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
-      // genes[9] = 10;   // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
+      //if (random(1)>0.3) {genes[7] = 40;} else {genes[7] = random(255);}  // 7 = stroke Alpha (0-255)
+      genes[7] = 4;    // 3 = fill Alpha (0-255)
+      genes[8] = 200;   // 8 = cellStartSize (10-50) (cellendipity/one uses 0-200)
+      //genes[9] = 1;   // 9 = cellEndSize (5 - 20 %) (cellendipity/one uses 0-50)
       // genes[10] = 500; // 10 = lifespan (200-1000)
       if (random(1)>0.4f) {genes[11] = 100;} else {genes[1] = random(75, 150);} // 11 = flatness (50-200 %)
       if (random(1)>0.5f) {genes[12] = 0;} else {genes[12] = random(-75, 75);} // 12 = spiral screw (-75 - +75 %)
       genes[13] = 75;  // 13 = fertility (70-90%)
-      genes[14] = 1;   // 14 = spawnCount (1-5)
+      genes[14] = 3;   // 14 = spawnCount (1-5)
       // genes[15] = 4;   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
       // genes[16] = 5;   // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
       genes[17] = 30;  // 17 = noisePercent (0-100%)
+      if (p.centerSpawn) {genes[18] = width/2;} else {genes[18] = random(width-100) + 100;}  // 18 = seedPosX (0-width)
+      if (p.centerSpawn) {genes[19] = height/2;} else {genes[19] = random(height-100) + 100;}  // 19 = seedPosY (0-height)
 
 
     }
@@ -527,21 +512,13 @@ class DNA {
     return new DNA(newgenes);
   }
 
-  public void geneMutate(float m) {
-    // Using the received mutation probability 'm', picks new, fully random values in array spots
-    // This method is called from the 'reproduce' method in Cell
-    for (int i = 0; i < genes.length; i++) {
-      if (random(1) < m) { genes[i] = random(0,1); }
-    }
-  }
-} // End of DNA class
+}
+// Global settings that apply equally to all cells in the colony
+
 class Parameters {
   boolean debug;
   boolean centerSpawn;
-  boolean autoRestart;
   boolean screendumpON;
-  boolean veilDrawON;
-  boolean veilRepopulateON;
   boolean fillDisable;
   boolean strokeDisable;
   boolean greyscaleON;
@@ -553,7 +530,6 @@ class Parameters {
   int numStrains;
   int stepSize;
   int stepSizeN;
-  int trailMode;
 
   int bkgColGrey;
   int bkgColor;
@@ -570,35 +546,26 @@ class Parameters {
 
   Parameters() {
     debug = false;
-    centerSpawn = false; // true=initial spawn is width/2, height/2 false=random
-    autoRestart = false; // If true, will not wait for keypress before starting anew
+    if (random(1) > 0.6f) {centerSpawn = true;} else {centerSpawn = false;} // true=initial spawn is width/2, height/2 false=random
     screendumpON = true;
-    fillDisable = false;
+    fillDisable = true;
     strokeDisable = false;
     if (random(1) > 0.5f) {greyscaleON = true;} else {greyscaleON = false;}
-    if (random(1) > 0.6f) {nucleus = true;} else {nucleus = false;}
+    if (random(1) > 0) {nucleus = true;} else {nucleus = false;}
     stepped = true;
     wraparound = false;
 
-    strainSize = PApplet.parseInt(random(3,20)); // Number of cells in a strain
-    numStrains = PApplet.parseInt(random(1,4)); // Number of strains (a group of cells sharing the same DNA)
+    strainSize = PApplet.parseInt(random(1,1)); // Number of cells in a strain
+    numStrains = PApplet.parseInt(random(10,10)); // Number of strains (a group of cells sharing the same DNA)
     if (random(1) > 0.8f) {stepSize = PApplet.parseInt(random(20,50)); stepSizeN = stepSize;} else {stepSize = 0; stepSizeN = PApplet.parseInt(random(20, 50));}
     //stepSizeN = int(random(20, 50));
-   
+
 
     bkgColor = color(random(360), random(255), random(255)); // Background colour
+    bkgColor = color(random(360), 0, 255); // Background colour
     bkgColGrey = PApplet.parseInt(random(128));
+    bkgColGrey = 360;
 
-    //fill_HTwist = 0; // (0-360)
-    //fill_STwist = 0; // (0-255)
-    //fill_BTwist = 0; // (0-255)
-    //fill_ATwist = 0; // (0-255)
-
-    //stroke_HTwist = 0; // (0-360)
-    //stroke_STwist = 0; // (0-255)
-    //stroke_BTwist = 0; // (0-255)
-    //stroke_ATwist = 0; // (0-255)
-  
     if (random(1) > 0.1f) {fill_HTwist = 0;} else {fill_HTwist = PApplet.parseInt(random(360));} // (0-255)
     if (random(1) > 0.1f) {fill_STwist = 0;} else {fill_STwist = PApplet.parseInt(random(360));} // (0-255)
     if (random(1) > 0.1f) {fill_BTwist = 0;} else {fill_BTwist = PApplet.parseInt(random(360));} // (0-255)
@@ -608,6 +575,16 @@ class Parameters {
     if (random(1) > 0.1f) {stroke_STwist = 0;} else {stroke_STwist = PApplet.parseInt(random(360));} // (0-255)
     if (random(1) > 0.1f) {stroke_BTwist = 0;} else {stroke_BTwist = PApplet.parseInt(random(360));} // (0-255)
     if (random(1) > 0.1f) {stroke_ATwist = 0;} else {stroke_ATwist = PApplet.parseInt(random(360));} // (0-255)
+
+    fill_HTwist = 0; // (0-360)
+    fill_STwist = 0; // (0-255)
+    fill_BTwist = 0; // (0-255)
+    fill_ATwist = 0; // (0-255)
+
+    stroke_HTwist = 0; // (0-360)
+    stroke_STwist = 0; // (0-255)
+    stroke_BTwist = 0; // (0-255)
+    stroke_ATwist = 0; // (0-255)
   }
 }
   public void settings() {  size(1024, 1024);  smooth(); }
