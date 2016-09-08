@@ -33,7 +33,7 @@ class Parameters {
 
   Parameters() {
     debug = false;
-    centerSpawn = false; // true=initial spawn is width/2, height/2 false=random
+    if (random(1) > 0.5) {centerSpawn = true;} else {centerSpawn = false;} // true=initial spawn is width/2, height/2 false=random
     autoRestart = false; // If true, will not wait for keypress before starting anew
     screendumpON = true;
     fillDisable = false;
@@ -44,7 +44,7 @@ class Parameters {
     wraparound = false;
 
     strainSize = int(random(3,20)); // Number of cells in a strain
-    numStrains = int(random(1,4)); // Number of strains (a group of cells sharing the same DNA)
+    numStrains = int(random(1,10)); // Number of strains (a group of cells sharing the same DNA)
     if (random(1) > 0.8) {stepSize = int(random(20,50)); stepSizeN = stepSize;} else {stepSize = 0; stepSizeN = int(random(20, 50));}
     //stepSizeN = int(random(20, 50));
    

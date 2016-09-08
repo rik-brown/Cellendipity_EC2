@@ -1,5 +1,7 @@
 class Colony {
 
+// position is no longer passed in to the constructor as a vector, but as values in the DNA
+
   // VARIABLES
   ArrayList<Cell> cells;    // An arraylist for all the cells //<>// //<>// //<>// //<>// //<>//
   int colonyMaxSize = 100;
@@ -16,15 +18,15 @@ class Colony {
       for (int j = 0; j < p.strainSize; j++) {
         PVector v = PVector.random2D();   // Initial velocity vector is random
         //PVector po = new PVector(random(width), random(height));
-        PVector po = new PVector(width/2, height/2);
-        cells.add(new Cell(po, v, dna)); // Add new Cell with DNA
+        //PVector po = new PVector(width/2, height/2);
+        cells.add(new Cell(v, dna)); // Add new Cell with DNA
       }
     }
   }
 
-// Spawn a new cell 
-  void spawn(PVector pos, PVector vel, DNA dna_) {
-    cells.add(new Cell(pos, vel, dna_));
+// Spawn a new cell
+  void spawn(PVector vel, DNA dna_) {
+    cells.add(new Cell(vel, dna_));
   }
 
 // Run the colony

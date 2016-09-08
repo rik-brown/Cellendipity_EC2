@@ -1,7 +1,8 @@
 // Class to describe DNA
 // Borrowed from 'Evolution EcoSystem'
-// by Daniel Shiffman <http://www.shiffman.net>
+// by Daniel Shiffman <http://www.shiffman.net> #codingrainbow
 
+// Adding genes for position
 
 class DNA {
 
@@ -9,7 +10,7 @@ class DNA {
 
   // Constructor (makes a random DNA)
   DNA() {
-      genes = new float[18];  // DNA contains an array called 'genes' with [12] float values
+      genes = new float[20];  // DNA contains an array called 'genes' with [12] float values
 
       // DNA gene mapping (18 genes)
       // 0 = fill Hue (0-360)
@@ -30,6 +31,8 @@ class DNA {
       // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
       // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
       // 17 = noisePercent (0-100%)
+      // 18 = seedPosX (0-width)
+      // 19 = seedPosY (0-height)
 
       // RANDOMIZED VALUES
             genes[0] = random(360);        // 0 = fill Hue (0-360)
@@ -50,7 +53,7 @@ class DNA {
             genes[15] = random(0, 4);      // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
             genes[16] = random(1, 6);      // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
             genes[17] = random(100);       // 17 = noisePercent (0-100%)
-            
+
             // FIXED VALUES (OVERRIDES)
       // genes[0] = 0;    // 0 = fill Hue (0-360)
       // genes[1] = 0;    // 1 = fill Saturation (0-255)
@@ -70,6 +73,8 @@ class DNA {
       // genes[15] = 4;   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
       // genes[16] = 5;   // 16 = step (Noise) (1 - 6 * 0.001?)  (cellendipity/one uses 0.001-0.006)
       genes[17] = 30;  // 17 = noisePercent (0-100%)
+      if (p.centerSpawn) {genes[18] = width/2;} else {genes[18] = random(width);}  // 18 = seedPosX (0-width)
+      if (p.centerSpawn) {genes[19] = height/2;} else {genes[19] = random(height);}  // 19 = seedPosY (0-height)
 
 
     }

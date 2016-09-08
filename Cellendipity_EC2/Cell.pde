@@ -50,7 +50,7 @@ class Cell {
   float strokeAlpha;    // Transparency (HSB & RGB)
 
   // CONSTRUCTOR: create a 'cell' object
-  Cell (PVector pos, PVector vel, DNA dna_) {
+  Cell (PVector vel, DNA dna_) {
   // OBJECTS
   dna = dna_;
 
@@ -73,6 +73,8 @@ class Cell {
   // 15 = vMax (Noise) (0-5) (cellendipity/one uses 0-4)
   // 16 = step (Noise) (0.005 - ?)  (cellendipity/one uses 0.001-0.006)
   // 17 = noisePercent (0-1) (0-100%)
+  // 18 = seedPosX (0-width)
+  // 19 = seedPosY (0-height)
 
   // BOOLEAN
   fertile = false; // A new cell always starts off infertile
@@ -95,7 +97,7 @@ class Cell {
   drawStepN = 1;
 
   // MOVEMENT
-  position = pos.copy(); //cell has position
+  position = new PVector(dna.genes[18], dna.genes[19]); //cell has position
   velocityLinear = vel.copy(); //cell has unique basic velocity component
   noisePercent = dna.genes[17] * 0.01; // How much influence on velocity does Perlin noise have?
   spiral = dna.genes[12] * 0.01; // Spiral screw amount
@@ -147,7 +149,7 @@ class Cell {
     velocityNoise = new PVector(vx,vy);
     xoff += step;
     yoff += step;
-    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>// //<>//
+    velocity = PVector.lerp(velocityLinear, velocityNoise, noisePercent); //<>// //<>// //<>// //<>// //<>//
     float screwAngle = map(maturity, 0, 1, 0, spiral * TWO_PI);
     //if (dna.genes[11] >= 0.5) {screwAngle *= -1;} //IS THIS ACTUALLY NEEDED ANY MORE? (screwAngle is both +ve & -ve)
     velocity.rotate(screwAngle);
@@ -274,15 +276,15 @@ class Cell {
     childDNA.genes[4] = hue(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[5] = saturation(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
     childDNA.genes[6] = brightness(childStrokeColor); // Get the  lerped hue value and map it back to gene-range
-    
+
     childDNA.genes[8] = r; // Child starts at size of mother's current radius
+    
+    childDNA.genes[18] = spawnPos.x; // Child starts at size of mother's current radius
+    childDNA.genes[19] = spawnPos.y; // Child starts at size of mother's current radius
 
     //childDNA.mutate(0.01); // Child DNA can mutate. HACKED! Mutation is temporarily disabled!
 
-    // Call spawn method (in Colony) with the new parameters for position, velocity, colour & starting radius)
-    // Note: Currently no combining of parent DNA
-    //colony.spawn(spawnPos, spawnVel, childDNA);
-    colony.spawn(position, spawnVel, childDNA); // Spawnpos = Mums position
+    colony.spawn(spawnVel, childDNA); // Spawnpos = Mums position
 
 
     //Reduce fertility for parent cells by squaring them
