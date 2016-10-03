@@ -7,9 +7,9 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 
 postTweet();
-// Interval: 3 hours
-// 1000 milliseconds * 60 seconds * 60 minutes * 3 hours
-setInterval(postTweet, 1000*60*60*3);
+// Interval: 8 hours
+// 1000 milliseconds * 60 seconds * 60 minutes * 8 hours
+setInterval(postTweet, 1000*60*60*8);
 
 function postTweet() {
   var cmd = 'cellendipity_EC2/Cellendipity_EC2';
